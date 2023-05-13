@@ -1,4 +1,5 @@
 const boom = require('@hapi/boom');
+const { createHash } = require('node:crypto');
 const { models } = require('../libs/sequelize');
 
 class CustomerService {
@@ -21,9 +22,11 @@ class CustomerService {
   }
 
   async create(data) {
+    data.user.password = createHash('sha512').update(data.user.password).digest('base64');
     const newCustomer = await models.Customer.create(data, {
       include: ['user']
     });
+    delete newCustomer.dataValues.user.dataValues.password;
     return newCustomer;
   }
 

@@ -1,4 +1,5 @@
 const boom = require('@hapi/boom');
+const { createHash } = require('node:crypto');
 
 const { models } = require('./../libs/sequelize');
 
@@ -6,7 +7,9 @@ class UserService {
   constructor() {}
 
   async create(data) {
+    data.password = createHash('sha512').update(data.password).digest('base64');
     const newUser = await models.User.create(data);
+    delete newUser.dataValues.password;
     return newUser;
   }
 
@@ -15,6 +18,16 @@ class UserService {
       include: ['customer']
     });
     return rta;
+  }
+
+  async findByEmail(email) {
+    const user = await models.User.findOne({
+      where: { email }
+    })
+    if (!user) {
+      throw boom.notFound('user not found');
+    }
+    return user;
   }
 
   async findOne(id) {
